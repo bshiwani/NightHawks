@@ -39,7 +39,7 @@ while (repeat == True):
 	    myImg = cv2.medianBlur(myImg,3)
 	    cv2.imshow('orig',myImg)
 	cap.release()
-	cv2.destroyWindow('orig')
+	cv2.destroyAllWindows()
 	actualWork()	
 	toDoAgain = raw_input("Want to exit? press 'q' then enter.\n To continue press any other key then enter\n")
 	if toDoAgain == "q":
