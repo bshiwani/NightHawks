@@ -24,7 +24,7 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize):
     (minHSV,maxHSV) = thresholdArrayTuppleHSV
     #minHSV = np.array([-1,-1,-1]) # stores lower bound of HSV values
     #maxHSV = np.array([-1,-1,-1]) #stores upper bound of HSV
-    orig = inputImage
+    orig = inputImage.copy()
     myFilt = np.zeros(orig.shape)
     # get HSV and seperate images
     HSV = cv2.cvtColor(orig,cv2.COLOR_BGR2HSV)
