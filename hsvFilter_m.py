@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from numpy import linalg as LA
 import sys
+from math import sqrt
 from matplotlib  import pyplot as plt
 
 windowX,windowY = 0,0
@@ -20,7 +21,7 @@ def showMe(name,image):
         if windowY > 784:
             windowY=0
 
-def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize):
+def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minimumArea):
     (minHSV,maxHSV) = thresholdArrayTuppleHSV
     #minHSV = np.array([-1,-1,-1]) # stores lower bound of HSV values
     #maxHSV = np.array([-1,-1,-1]) #stores upper bound of HSV
@@ -35,6 +36,7 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize):
     kernel = np.ones(dilationKernalSize,np.uint8)
     # dilate the image with that element
     myFilt = cv2.dilate(myFilt,kernel,iterations =1)
+    myFilt = cv2.erode(myFilt,kernel,iterations =1)
     #showMe("Dilate",myFilt)
     # dist = cv2.distanceTransform(np.array(myFilt,np.uint8)*255,cv2.cv.CV_DIST_FAIR,5)
     #showMe("Distance", dist+myFilt)
@@ -50,26 +52,46 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize):
         mask = np.zeros(myFilt.shape,np.uint8)
         cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED)
         M = cv2.moments(mask)
-        if M['m00'] >200000 :
+        if M['m00'] >minimumArea :
             mask = mask/255
             mask = cv2.merge((mask,mask,mask))
-            masked = masked + mask*orig
-            maskList.append((masked,M['m00']))
+            masked = mask*orig
+           
            # showMe('Masked',masked);
             cx = int(M['m10']/M['m00']) 
             cy = int(M['m01']/M['m00'])
             cv2.circle(myFilt,(cx,cy),5,(100,0,0),-1)
             covar = np.matrix([[M['mu20'],M['mu11']],[M['mu11'],M['mu02']]])
-            W, Vect = LA.eig(covar)
-            vect1a = (int(cx),int(cy))
-            vect1b = (int(cx+ M['m00']/10000*(W[0]/(W[0]+W[1]))*(Vect[0,0])),int(cy+ M['m00']/10000*(W[0]/(W[0]+W[1]))*Vect[1,0]))
+            L, Vect = LA.eig(covar)
+            #try:
+	    scalingFactora = L[0]/(L[0]+L[1])*sqrt(M['m00'])/10
+	    scalingFactorb = L[1]/(L[0]+L[1])*sqrt(M['m00'])/10
 
-            vect2a = (int(cx),int(cy))
-            vect2b = (int(cx+ M['m00']/10000*(W[1]/(W[1]+W[1]))*(Vect[0,1])),int(cy+ M['m00']/10000*(W[1]/(W[1]+W[1]))*Vect[1,1]))
+	    vecta1 = (int(cx),int(cy))
+	    vectb1 = (int(cx),int(cy))
+	    
+	    xa = int( -scalingFactora *Vect[0,0])#* pow(M['m30'],1/3)
+	    ya = int( -scalingFactora *Vect[1,0])#* pow(M['m03'],1/3)   
+	    
+	    xb = int(scalingFactorb*Vect[0,1])# * pow(M['m30'],1/3)
+	    yb = int(scalingFactorb*Vect[1,1])# * pow(M['m03'],1/3)
+	    
+	    vecta2 = (vecta1[0]+xa,vecta1[1]+ya)
+	    vectb2 = (vectb1[0]+xb,vectb1[1]+yb)
+	    vecta2 = (vecta1[0]+xa,vecta1[1]+ya)
+	    vectb2 = (vectb1[0]+xb,vectb1[1]+yb)
+	    angle = -np.rad2deg(np.arctan2(xb,yb))	
+	    
+	    if L[1]>L[0]:
+		angle = 180-np.rad2deg(np.arctan2(xb,yb))		
+	    else :
+		angle = 180-np.rad2deg(np.arctan2(xa,ya)) 
+	    print  pow(M['m30'],1)/pow(M['m00'],1) 
+	    cv2.polylines(orig,[np.array(hull,np.int32)],True,(0,100,100))
+	    cv2.line(orig,vecta1,vecta2,(0,255,0),5)
+	    cv2.line(orig,vectb1,vectb2,(255,0,0),5)
 
-            cv2.polylines(orig,[np.array(hull,np.int32)],True,(0,100,100))
-            cv2.line(orig,vect1a,vect1b,(0,255,0),5)
-            cv2.line(orig,vect2a,vect2b,(255,0,0),5)
+	    maskList.append((masked,M,vecta1,angle))	
         i = i+1
     #showMe("Hull",orig)
     return orig,maskList
