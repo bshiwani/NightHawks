@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: jeffrey
+@author: jwilder
 """
 
 import cv2
