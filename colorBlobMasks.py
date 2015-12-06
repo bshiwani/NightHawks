@@ -42,9 +42,13 @@ def readThresholds(fileName):
 	    sys.exit()
        
 
-blueThreshFile = 'thresholds/blue.txt'
-yellowThreshFile = 'thresholds/yellow.txt'
+blueThreshFile = 'thresholds/blueOut.txt'
+yellowThreshFile = 'thresholds/yellowOut.txt'
+#blueThreshFile = 'blueHome.txt'
+#yellowThreshFile = 'yellowHome.txt'
+
 cap = cv2.VideoCapture(0)
+
 
 print 'press q to exit'
 while cv2.waitKey(1)& 0xFF != ord('q'):
@@ -57,14 +61,14 @@ while cv2.waitKey(1)& 0xFF != ord('q'):
     
 	 
     if len(maskList) >0 : 
-	sorted(maskList,key = lambda m: m[1]['m00'] ,reverse=True)
-   	center ,angle = maskList[0][2],maskList[0][3]
+	sorted(maskList,key = lambda m: m[1][0]['m00'] ,reverse=True)
+   	M,center,vecta2,vectb1,vectb2,angle,Vect,L= maskList[0][1]	
 	rotMat = cv2.getRotationMatrix2D( center, angle, 1.0 )    
-	blues = cv2.warpAffine(blues, rotMat, (blues.shape[0],blues.shape[1]))  
-
-    cv2.imshow('filterB',blues)
-    yellows = hf.getHSVFilters(myImg,readThresholds(yellowThreshFile),(5,5),200000)
-    cv2.imshow('filterY',yellows[0])
+	blues = cv2.warpAffine(blues, rotMat, (blues.shape[0],blues.shape[1]))
+	myImg = cv2.warpAffine(myImg, rotMat, (blues.shape[0],blues.shape[1]))
+    	cv2.imshow('filterB',blues)
+    	yellows = hf.getHSVFilters(myImg,readThresholds(yellowThreshFile),(5,5),20000)
+	cv2.imshow('filterY',yellows[0])
 
 cap.release()   
 cv2.destroyAllWindows()
