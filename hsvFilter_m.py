@@ -53,46 +53,62 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minim
         cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED)
         M = cv2.moments(mask)
         if M['m00'] >minimumArea :
-            mask = mask/255
+            M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
+	    mask = mask/255
             mask = cv2.merge((mask,mask,mask))
             masked = mask*orig
-           
-           # showMe('Masked',masked);
-            cx = int(M['m10']/M['m00']) 
-            cy = int(M['m01']/M['m00'])
-            cv2.circle(myFilt,(cx,cy),5,(100,0,0),-1)
-            covar = np.matrix([[M['mu20'],M['mu11']],[M['mu11'],M['mu02']]])
-            L, Vect = LA.eig(covar)
-            #try:
-	    scalingFactora = L[0]/(L[0]+L[1])*sqrt(M['m00'])/10
-	    scalingFactorb = L[1]/(L[0]+L[1])*sqrt(M['m00'])/10
-
-	    vecta1 = (int(cx),int(cy))
-	    vectb1 = (int(cx),int(cy))
-	    
-	    xa = int( -scalingFactora *Vect[0,0])#* pow(M['m30'],1/3)
-	    ya = int( -scalingFactora *Vect[1,0])#* pow(M['m03'],1/3)   
-	    
-	    xb = int(scalingFactorb*Vect[0,1])# * pow(M['m30'],1/3)
-	    yb = int(scalingFactorb*Vect[1,1])# * pow(M['m03'],1/3)
-	    
-	    vecta2 = (vecta1[0]+xa,vecta1[1]+ya)
-	    vectb2 = (vectb1[0]+xb,vectb1[1]+yb)
-	    vecta2 = (vecta1[0]+xa,vecta1[1]+ya)
-	    vectb2 = (vectb1[0]+xb,vectb1[1]+yb)
-	    angle = -np.rad2deg(np.arctan2(xb,yb))	
-	    
-	    if L[1]>L[0]:
-		angle = 180-np.rad2deg(np.arctan2(xb,yb))		
-	    else :
-		angle = 180-np.rad2deg(np.arctan2(xa,ya)) 
-	    print  pow(M['m30'],1)/pow(M['m00'],1) 
+            
+            #showMe('Masked',masked);
+            cv2.circle(myFilt,vecta1,5,(100,0,0),-1)
+	    #angle =180 - np.rad2deg(np.arctan2(pow(M['mu30'],1),pow(M['mu03'],1))) 	
 	    cv2.polylines(orig,[np.array(hull,np.int32)],True,(0,100,100))
 	    cv2.line(orig,vecta1,vecta2,(0,255,0),5)
 	    cv2.line(orig,vectb1,vectb2,(255,0,0),5)
 
-	    maskList.append((masked,M,vecta1,angle))	
+	    maskList.append((masked,(M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L)))	
         i = i+1
     #showMe("Hull",orig)
     return orig,maskList
 
+def getShapeProperties(binaryMask):
+    M = cv2.moments(binaryMask)
+    cx = int(M['m10']/M['m00']) 
+    cy = int(M['m01']/M['m00'])
+    covar = np.matrix([[M['mu20'],M['mu11']],[M['mu11'],M['mu02']]])
+    L, Vect = LA.eig(covar)
+    #try:
+    scalingFactora = L[0]/(L[0]+L[1])*sqrt(M['m00'])/10
+    scalingFactorb = L[1]/(L[0]+L[1])*sqrt(M['m00'])/10
+
+    vecta1 = (int(cx),int(cy))
+    vectb1 = (int(cx),int(cy))
+    
+    xa = int( -scalingFactora *Vect[0,0])#* pow(M['m30'],1/3)
+    ya = int( -scalingFactora *Vect[1,0])#* pow(M['m03'],1/3)   
+    
+    xb = int(scalingFactorb*Vect[0,1])# * pow(M['m30'],1/3)
+    yb = int(scalingFactorb*Vect[1,1])# * pow(M['m03'],1/3)
+    
+
+    vecta2 = (vecta1[0]+xa,vecta1[1]+ya)
+    vectb2 = (vectb1[0]+xb,vectb1[1]+yb)	
+    
+    if L[1]<L[0]:
+	if((M['mu30']-M['mu03'])>0):
+	    shift = -90
+	    angle = 90-np.rad2deg(np.arctan2(xb,yb))
+	else:
+	    shift = 90
+	    angle = 270-np.rad2deg(np.arctan2(xb,yb))		
+   
+    else :
+	if((M['mu30']-M['mu03'])>0):
+	    shift = -90
+	    angle = 90-np.rad2deg(np.arctan2(xa,ya)) 
+	else:
+	    shift = 90
+	    angle = 270 -np.rad2deg(np.arctan2(xa,ya)) 
+    #angle =180 - np.rad2deg(np.arctan2(pow(M['mu30'],1),pow(M['mu03'],1))) 
+    return M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L 
+		#masked,M,vecta1,vecta2,vectb1,vectb2,angle,vect,L
+    	
