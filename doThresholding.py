@@ -22,34 +22,35 @@ def showMe(name,image):
             windowY=0
 
 def actualWork():
-	myTh = ct.thresholding()
-	myTh.startRecordingThreshold(myImg)  
-	cv2.waitKey(0)
-	myTh.saveThresholds(fileName)
-	cv2.destroyAllWindows()
+    myTh = ct.thresholding()
+    myTh.startRecordingThreshold(myImg)  
+    cv2.waitKey(0)
+    myTh.saveThresholds(fileName)
+    cv2.destroyAllWindows()
 
-
-fileName = str(raw_input("Enter the name of file to save thresholds.\n"))
+#**********Main Code Starts Here************************************
+fileName = str(raw_input("Enter the filename to save thresholds to:\n"))
 repeat = True
 while (repeat == True):
-	cap = cv2.VideoCapture(0)
-	print ' press q to stop streaming, and start thresholding\n'
-	while cv2.waitKey(1)& 0xFF != ord('q'):
-	    ret,myImg = cap.read()   
-	    myImg = cv2.medianBlur(myImg,3)
-	    cv2.imshow('orig',myImg)
-	cap.release()
-	cv2.destroyAllWindows()
-	actualWork()	
-	toDoAgain = raw_input("Want to exit? press 'q' then enter.\n To continue press any other key then enter\n")
-	if toDoAgain == "q":
-	    repeat = False
-	else:	
-	    fileName = str(raw_input("Enter the name of file to save thresholds.\n"))
+    cap = cv2.VideoCapture(0)
+    print('Place object of interest in view and press q to start thresholding\n')
+    #Show video feed until user signals to threshold by typing q
+    while cv2.waitKey(1)& 0xFF != ord('q'):
+        ret,myImg = cap.read()   
+        myImg = cv2.medianBlur(myImg,3)
+        cv2.imshow('orig',myImg)
+    #Stop video feed and close windows
+    cap.release()
+    cv2.destroyAllWindows()
+    #Record threshold values
+    actualWork()	
+    toDoAgain = raw_input("Press q to exit")
+    if toDoAgain == "q":
+        repeat = False
+    else:	
+        fileName = str(raw_input("Enter the name of file to save thresholds.\n"))
+
 sys.exit()
-
-
-
 
 
 
