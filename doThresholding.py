@@ -49,13 +49,8 @@ while (repeat == True):
         repeat = False
     else:	
         fileName = str(raw_input("Enter the name of file to save thresholds.\n"))
-        
-print("destroying windows")
-cv2.destroyAllWindows()
+
 sys.exit()
-
-
-
 
 
 
