@@ -61,14 +61,14 @@ while cv2.waitKey(1)& 0xFF != ord('q'):
     blues,maskList = hf.getHSVFilters(myImg,readThresholds(blueThreshFile),(11,11),2000000)
     
     if len(maskList) >0 : 
-	sorted(maskList,key = lambda m: m[1][0]['m00'] ,reverse=True)
-   	M,center,vecta2,vectb1,vectb2,angle,Vect,L= maskList[0][1]	
-	rotMat = cv2.getRotationMatrix2D( center, angle, 1.0 )    
-	blues = cv2.warpAffine(blues, rotMat, (blues.shape[0],blues.shape[1]))
-	myImg = cv2.warpAffine(myImg, rotMat, (blues.shape[0],blues.shape[1]))
-    	cv2.imshow('filterB',blues)
-    	yellows = hf.getHSVFilters(myImg,readThresholds(yellowThreshFile),(5,5),20000)
-	cv2.imshow('filterY',yellows[0])
+        sorted(maskList,key = lambda m: m[1][0]['m00'] ,reverse=True)
+        M,center,vecta2,vectb1,vectb2,angle,Vect,L= maskList[0][1]	
+        rotMat = cv2.getRotationMatrix2D( center, angle, 1.0 )    
+        blues = cv2.warpAffine(blues, rotMat, (blues.shape[0],blues.shape[1]))
+        myImg = cv2.warpAffine(myImg, rotMat, (blues.shape[0],blues.shape[1]))
+        cv2.imshow('filterB',blues)
+        yellows = hf.getHSVFilters(myImg,readThresholds(yellowThreshFile),(5,5),20000)
+        cv2.imshow('filterY',yellows[0])
 
 cap.release()   
 cv2.destroyAllWindows()
