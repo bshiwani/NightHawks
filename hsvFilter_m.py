@@ -40,23 +40,25 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minim
     #showMe("Dilate",myFilt)
     # dist = cv2.distanceTransform(np.array(myFilt,np.uint8)*255,cv2.cv.CV_DIST_FAIR,5)
     #showMe("Distance", dist+myFilt)
+    
     # get borders of the blob
     border = cv2.Canny(myFilt,100,200)
     #showMe("Border",border)
-    masked = np.zeros(orig.shape,np.uint8)
+    masked = np.zeros(orig.shape,np.uint8) #create empty mask
     contours,hirarchy = cv2.findContours(myFilt,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    
     i = 0
     maskList = []
     while i <(len(contours)):
         hull = cv2.convexHull(contours[i])
         mask = np.zeros(myFilt.shape,np.uint8)
-        cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED)
+        cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED) #Draw each contour as a filled mask
         M = cv2.moments(mask)
         if M['m00'] >minimumArea :
             M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
-	    mask = mask/255
-            mask = cv2.merge((mask,mask,mask))
-            masked = mask*orig
+            mask = mask/255 #Create binary image mask
+            #mask = cv2.merge((mask,mask,mask)) #Make a three channel mask for multiplying with 3 channel image
+            #masked = mask*orig #Get masked sections of original image
             
             #showMe('Masked',masked);
             cv2.circle(myFilt,vecta1,5,(100,0,0),-1)
@@ -65,10 +67,10 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minim
 	    cv2.line(orig,vecta1,vecta2,(0,255,0),5)
 	    cv2.line(orig,vectb1,vectb2,(255,0,0),5)
 
-	    maskList.append((masked,(M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L)))	
+	    maskList.append((mask,(M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L))) #Add each mask and its properties to the maskList	
         i = i+1
     #showMe("Hull",orig)
-    return orig,maskList
+    return orig,maskList #Return (original image with blob polylines and eigenvectors), and (the list of individual blob masks) 
 
 def getShapeProperties(binaryMask):
     M = cv2.moments(binaryMask)
