@@ -21,30 +21,27 @@ def showMe(name,image):
         if windowY > 784:
             windowY=0
 
-def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minimumArea):
+def getHSVFilters(inputImage, thresholdArrayTuppleHSV, kernelSize, minimumArea):
     (minHSV,maxHSV) = thresholdArrayTuppleHSV
-    #minHSV = np.array([-1,-1,-1]) # stores lower bound of HSV values
-    #maxHSV = np.array([-1,-1,-1]) #stores upper bound of HSV
-    orig = inputImage.copy()
-    myFilt = np.zeros(orig.shape)
-    # get HSV and seperate images
+
+    orig = inputImage.copy() #make a copy of the input image
+    myFilt = np.zeros(orig.shape) #Do we need to initialize this???
+    
+    # Convert to HSV and find regions that are in range defined by thresholds
     HSV = cv2.cvtColor(orig,cv2.COLOR_BGR2HSV)
-    H,S,V = cv2.split(HSV)
     myFilt = cv2.inRange(HSV,minHSV,maxHSV)
-    # showMe("FILTERED",myFilt)
-    #create stucturing element 
-    kernel = np.ones(dilationKernalSize,np.uint8)
-    # dilate the image with that element
+    showMe("FILTERED",myFilt)
+    
+    #Apply morphological operations on the in range pixels (clean up noise)
+    kernel = np.ones(kernelSize,np.uint8)
     myFilt = cv2.dilate(myFilt,kernel,iterations =1)
     myFilt = cv2.erode(myFilt,kernel,iterations =1)
-    #showMe("Dilate",myFilt)
+    #showMe("Dilate",myFilt) #Debug
+    
     # dist = cv2.distanceTransform(np.array(myFilt,np.uint8)*255,cv2.cv.CV_DIST_FAIR,5)
     #showMe("Distance", dist+myFilt)
-    
-    # get borders of the blob
-    border = cv2.Canny(myFilt,100,200)
-    #showMe("Border",border)
-    masked = np.zeros(orig.shape,np.uint8) #create empty mask
+
+    #Find the contours of the in range pixels
     contours,hirarchy = cv2.findContours(myFilt,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     
     i = 0
@@ -54,9 +51,11 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, dilationKernalSize, minim
         mask = np.zeros(myFilt.shape,np.uint8)
         cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED) #Draw each contour as a filled mask
         M = cv2.moments(mask)
+        #showMe('mask', mask)
         if M['m00'] >minimumArea :
             M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
             mask = mask/255 #Create binary image mask
+            
             #mask = cv2.merge((mask,mask,mask)) #Make a three channel mask for multiplying with 3 channel image
             #masked = mask*orig #Get masked sections of original image
             
