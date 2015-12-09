@@ -30,13 +30,17 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, kernelSize, minimumArea):
     # Convert to HSV and find regions that are in range defined by thresholds
     HSV = cv2.cvtColor(orig,cv2.COLOR_BGR2HSV)
     myFilt = cv2.inRange(HSV,minHSV,maxHSV)
-    showMe("FILTERED",myFilt)
+    #showMe("FILTERED",myFilt)
     
     #Apply morphological operations on the in range pixels (clean up noise)
-    kernel = np.ones(kernelSize,np.uint8)
-    myFilt = cv2.dilate(myFilt,kernel,iterations =1)
-    myFilt = cv2.erode(myFilt,kernel,iterations =1)
-    #showMe("Dilate",myFilt) #Debug
+    #kernel = np.ones(kernelSize,np.uint8) #replaced with ellipse below
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernelSize) #Use ellipse structuring element because blob shape is not boxy.
+    myFilt = cv2.morphologyEx(myFilt,cv2.MORPH_CLOSE,kernel)
+    myFilt = cv2.morphologyEx(myFilt,cv2.MORPH_OPEN,kernel)
+    
+    #myFilt = cv2.dilate(myFilt,kernel,iterations =1) #Dilation followed by erosion is closing...replaced with close operation
+    #myFilt = cv2.erode(myFilt,kernel,iterations =1)
+    #showMe("Morph",myFilt) #Debug
     
     # dist = cv2.distanceTransform(np.array(myFilt,np.uint8)*255,cv2.cv.CV_DIST_FAIR,5)
     #showMe("Distance", dist+myFilt)
@@ -48,9 +52,9 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, kernelSize, minimumArea):
     maskList = []
     while i <(len(contours)):
         hull = cv2.convexHull(contours[i])
-        mask = np.zeros(myFilt.shape,np.uint8)
+        mask = np.zeros(myFilt.shape,np.uint8) #Create an empty mask
         cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED) #Draw each contour as a filled mask
-        M = cv2.moments(mask)
+        M = cv2.moments(mask) #Get the moments of the mask to check if it is above minimum area
         #showMe('mask', mask)
         if M['m00'] >minimumArea :
             M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
