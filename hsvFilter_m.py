@@ -20,6 +20,24 @@ def showMe(name,image):
         windowY= windowY+tup[0]
         if windowY > 784:
             windowY=0
+            
+def maskColorCheck(HSVImage, testMask, testMaskArea, thresholdArrayTuppleHSV):
+    (minHSV,maxHSV) = thresholdArrayTuppleHSV
+    #apply contour mask to input image
+    img = HSVImage*cv2.merge([testMask, testMask, testMask])
+    img = cv2.inRange(HSVImage, minHSV, maxHSV)
+    
+    #get inRange area
+    M = cv2.moments(img)
+    
+    #compare inRange area to total area. If high, it is correct color
+    if(M['m00']/testMaskArea >0.99):
+        return True
+    return False
+    
+    
+
+    
 
 def getHSVFilters(inputImage, thresholdArrayTuppleHSV, kernelSize, minimumArea):
     (minHSV,maxHSV) = thresholdArrayTuppleHSV
@@ -54,23 +72,25 @@ def getHSVFilters(inputImage, thresholdArrayTuppleHSV, kernelSize, minimumArea):
         hull = cv2.convexHull(contours[i])
         mask = np.zeros(myFilt.shape,np.uint8) #Create an empty mask
         cv2.drawContours(mask,contours,i,(255,0,0),thickness = cv2.cv.CV_FILLED) #Draw each contour as a filled mask
-        M = cv2.moments(mask) #Get the moments of the mask to check if it is above minimum area
-        #showMe('mask', mask)
-        if M['m00'] >minimumArea :
-            M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
-            mask = mask/255 #Create binary image mask
-            
-            #mask = cv2.merge((mask,mask,mask)) #Make a three channel mask for multiplying with 3 channel image
-            #masked = mask*orig #Get masked sections of original image
-            
-            #showMe('Masked',masked);
-            cv2.circle(myFilt,vecta1,5,(100,0,0),-1)
-	    #angle =180 - np.rad2deg(np.arctan2(pow(M['mu30'],1),pow(M['mu03'],1))) 	
-	    cv2.polylines(orig,[np.array(hull,np.int32)],True,(0,100,100))
-	    cv2.line(orig,vecta1,vecta2,(0,255,0),5)
-	    cv2.line(orig,vectb1,vectb2,(255,0,0),5)
-
-	    maskList.append((mask,(M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L))) #Add each mask and its properties to the maskList	
+        if(hirarchy[0][i][3] == -1):
+            M = cv2.moments(mask) #Get the moments of the mask to check if it is above minimum area
+            #showMe('mask', mask)
+            if M['m00'] >minimumArea :
+                if(maskColorCheck(HSV, mask, M['m00'], thresholdArrayTuppleHSV)):
+                    
+                    M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L = getShapeProperties(mask)
+                    mask = mask/255 #Create binary image mask
+                    
+                    #mask = cv2.merge((mask,mask,mask)) #Make a three channel mask for multiplying with 3 channel image
+                    #masked = mask*orig #Get masked sections of original image
+                    
+                    #showMe('Masked',masked);
+                    cv2.circle(myFilt,vecta1,5,(100,0,0),-1)
+                    #angle =180 - np.rad2deg(np.arctan2(pow(M['mu30'],1),pow(M['mu03'],1))) 	
+                    cv2.polylines(orig,[np.array(hull,np.int32)],True,(0,100,100))
+                    cv2.line(orig,vecta1,vecta2,(0,255,0),5)
+                    cv2.line(orig,vectb1,vectb2,(255,0,0),5)
+                    maskList.append((mask,(M,vecta1,vecta2,vectb1,vectb2,angle,Vect,L))) #Add each mask and its properties to the maskList	
         i = i+1
     #showMe("Hull",orig)
     return orig,maskList #Return (original image with blob polylines and eigenvectors), and (the list of individual blob masks) 
