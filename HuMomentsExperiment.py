@@ -1,4 +1,3 @@
-
 #experiments with HuMoments
 #Code based on colorBlobMasks_JW_Experiments.py
 import cv2
@@ -16,7 +15,6 @@ def showMe(name,image):
     global windowX,windowY
     cv2.namedWindow(name,cv2.WINDOW_AUTOSIZE)
     cv2.imshow(name,image)
-    #cv2.moveWindow(name,windowX,windowY)
     #Get image shape and update window location so windows don't come up on top of eachother
     tup = image.shape
     windowX= windowX+tup[1] +4
@@ -52,28 +50,26 @@ def readThresholds(fileName):
         cv2.destroyAllWindows()
         sys.exit()
 
-#HuMoments subroutines
+#**************HuMoments subroutines***************************************
 def animate(array):
-	array=array*50
-	delta=10
-	graph = 255*np.ones((700,800,3),dtype=np.uint8)
+	array=array*50	#scaling factor
+	delta=10	#spcacing value for bars
+	graph = 255*np.ones((700,800,3),dtype=np.uint8) #image space (white)
 	for i in xrange(len(array)):
 		xx=int(array[i])
-		#cv2.line(graph,(0,0),(100,100),(0,255,0),5) #BGR (X,-Y)
-		cv2.line(graph,(delta,350),(delta,350-xx),(0,255,0),50) #BGR (X,-Y)
-		delta=delta+100
+		cv2.line(graph,(delta,350),(delta,350-xx),(0,255,0),50) #plotting the values for each Humoment in a different bar
+		delta=delta+100	#increment for next bar
 	print(array)
 	showMe('BarGraph',graph)
 		
 # End of HuMoments subroutines     
-
+#***************************************************
 
 #****************Main Code******************************************
 # Threshold filenames
 blueThreshFile = 'thresholds/blueOut.txt'
 yellowThreshFile = 'thresholds/yellowOut.txt'
-#blueThreshFile = 'blueHome.txt'
-#yellowThreshFile = 'yellowHome.txt'
+
 
 #Read thresholds from files:
 blueThresh = readThresholds(blueThreshFile)
@@ -100,42 +96,29 @@ while cv2.waitKey(1)& 0xFF != ord('q'):
     
     #Get yellow masks
     yellows,yellowMaskList = hf.getHSVFilters(myImg,yellowThresh,(1,1),20000)
-    #print("blueMaskListLength", len(maskList))
-    #print("yellowMaskListLength", len(yellowMaskList))
-    #cv2.imshow("yellows", yellows)
-    
-    #if len(yellowMaskList):
-        #showMe('yellows', yellowMaskList[0][0])
+
     
     for i in xrange(len(maskList)):#For every blue mask
         contiguousYellows = 0
         birdMask = np.zeros((np.shape(myImg)[0], np.shape(myImg)[1]), dtype = np.uint8)
-        moments=cv2.moments(maskList[0][0])
-        hu0=cv2.HuMoments(moments)
-        hu=-np.sign(hu0)*np.log10(np.abs(hu0))
+#********#obtain HuMoments values*************************************************
+        moments=cv2.moments(maskList[0][0])	#obtain moments first
+        hu0=cv2.HuMoments(moments)	#call humoments function
+        hu=-np.sign(hu0)*np.log10(np.abs(hu0))	#diminish dynamic range using logarithmic formula
         x=hu[0][0],hu[1][0],hu[2][0],hu[3][0],hu[4][0],hu[5][0],hu[6][0]
-        y=np.asarray(x)
-        animate(y)         
-
+        y=np.asarray(x) #obtain huMoments as an array
+        animate(y)	#call function to create a bargraph with the values for HuMoments       
+#*******************************************************************************
 
 			
         for yellowMask in yellowMaskList:#Check every yellow mask to see if it is contiguous with blue mask
-            #res = maskList[i][0]+yellowMask[0]
             res = cv2.bitwise_or(maskList[i][0],yellowMask[0])
-            #res = cv2.morphologyEx(res,cv2.MORPH_CLOSE,kernel)
             resD = cv2.dilate(res,kernel,iterations =1) 
-            #res = cv2.erode(res,kernel,iterations =1)
-            #showMe('totalMask', res*255)
             contours, hierarchy = cv2.findContours(resD,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             #print(len(contours))
             if(len(contours) == 1):
                 birdMask = cv2.bitwise_or(birdMask,res)
                 contiguousYellows += 1
-                
-                #showMe('birdmask', birdMask*255)
-                #x,y,w,h = cv2.boundingRect(birdMask)
-                #cv2.rectangle(myImg,(x,y),(x+w,y+h),(0,255,0),2)
-        #showMe('birdMask', birdMask)
                 
             #If we've added yellows, check for blues that are also contiguous (add head)
             for j in xrange(len(maskList)):
@@ -144,8 +127,6 @@ while cv2.waitKey(1)& 0xFF != ord('q'):
                     res1 = cv2.bitwise_or(maskList[j][0],birdMask)
                     #res1 = cv2.morphologyEx(res1,cv2.MORPH_CLOSE,kernel)
                     resD1 = cv2.dilate(res1,kernel,iterations =1) 
-                    #res1 = cv2.erode(res1,kernel,iterations =1)
-                    #contours, hierarchy = cv2.findContours(res1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                     contours, hierarchy = cv2.findContours(resD1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                     #print(len(contours))
                     if(len(contours) == 1):
@@ -154,36 +135,7 @@ while cv2.waitKey(1)& 0xFF != ord('q'):
         if contiguousYellows >= 2:
 			showMe('birdMask', birdMask*255)
 			break
-    
-   
-    
-    '''
-    if len(maskList) >0 : #If there are blue objects found:
-    
-        #sorted(maskList,key = lambda m: m[1][0]['m00'] ,reverse=True) #Sort maskList according to size of blob
-        #M,center,vecta2,vectb1,vectb2,angle,Vect,L= maskList[0][1]	
-        #showMe('maskList 0', maskList[0][0]*255)
-        yellows, yellowMaskList = hf.getHSVFilters(myImg,yellowThresh,(5,5),20000)
-        
-        
-        #sorted(yellowMaskList, key = lambda m: m[1][0]['m00'], reverse = True) #Sort
-        
-        rotMat = cv2.getRotationMatrix2D( center, angle, 1.0 )    
-        #blues = cv2.warpAffine(blues, rotMat, (blues.shape[0],blues.shape[1]))
-        #myImg = cv2.warpAffine(myImg, rotMat, (blues.shape[0],blues.shape[1]))
-        
-        cv2.imshow('filterB',blues)
-        yellows = hf.getHSVFilters(myImg,yellowThresh,(5,5),20000)
-        cv2.imshow('filterY',yellows[0])
-        '''
-    
-    
-    
-    
-    
-
+ 
 cap.release()   
 cv2.destroyAllWindows()
 sys.exit()
-
-  
